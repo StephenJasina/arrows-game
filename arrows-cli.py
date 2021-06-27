@@ -36,6 +36,8 @@ class ArrowBoard:
         self.total_arrows = arrows
         self.remaining_arrows = arrows
 
+        self.landmarks[start[0]][start[1]].append(ArrowBoard.START)
+
         self.row_height = row_height
         self.col_width = col_width
 
@@ -201,15 +203,47 @@ class ArrowBoard:
             for col in range(self.cols):
                 landmark = self.landmarks[row][col]
                 if ArrowBoard.START in landmark:
-                    pass
+                    self.board.addch(
+                            row * self.row_height + self.row_height // 2 - 1,
+                            col * self.col_width + self.col_width // 2 - 1,
+                            curses.ACS_ULCORNER, curses.color_pair(4))
+                    self.board.addch(
+                            row * self.row_height + self.row_height // 2 - 1,
+                            col * self.col_width + self.col_width // 2,
+                            curses.ACS_HLINE, curses.color_pair(4))
+                    self.board.addch(
+                            row * self.row_height + self.row_height // 2 - 1,
+                            col * self.col_width + self.col_width // 2 + 1,
+                            curses.ACS_URCORNER, curses.color_pair(4))
+                    self.board.addch(
+                            row * self.row_height + self.row_height // 2,
+                            col * self.col_width + self.col_width // 2 - 1,
+                            curses.ACS_VLINE, curses.color_pair(4))
+                    self.board.addch(
+                            row * self.row_height + self.row_height // 2,
+                            col * self.col_width + self.col_width // 2 + 1,
+                            curses.ACS_VLINE, curses.color_pair(4))
+                    self.board.addch(
+                            row * self.row_height + self.row_height // 2 + 1,
+                            col * self.col_width + self.col_width // 2 - 1,
+                            curses.ACS_LLCORNER, curses.color_pair(4))
+                    self.board.addch(
+                            row * self.row_height + self.row_height // 2 + 1,
+                            col * self.col_width + self.col_width // 2,
+                            curses.ACS_HLINE, curses.color_pair(4))
+                    self.board.addch(
+                            row * self.row_height + self.row_height // 2 + 1,
+                            col * self.col_width + self.col_width // 2 + 1,
+                            curses.ACS_LRCORNER, curses.color_pair(4))
                 if ArrowBoard.GOAL in landmark:
                     # For goals, only color every other square for a
                     # checkerboard pattern
                     for i in range(1, 4):
                         for j in range(1, 6):
                             if (i + j) % 2 == 0:
-                                self.board.addch(row * 4 + i, col * 6 + j,
-                                        curses.ACS_BLOCK)
+                                self.board.addch(row * self.row_height + i,
+                                        col * self.col_width + j,
+                                        ' ', curses.A_REVERSE)
 
     def paint_cursor(self, cursor):
         '''
@@ -320,7 +354,7 @@ class ArrowBoard:
         maxy, maxx = stdscr.getmaxyx()
         self.board.refresh(0, 0, 2, 0, maxy - 1, maxx - 1)
 
-    def run(self, stdscr, position, delay=0.2):
+    def run(self, stdscr, position, delay=0.1):
         '''
         Repeatedly advance the board state until the position reaches the goal
         or until no move is possible. Also exits if q is pressed.
@@ -589,6 +623,7 @@ def main(stdscr):
     curses.init_pair(1, curses.COLOR_RED, -1)     # Arrows
     curses.init_pair(2, curses.COLOR_CYAN, -1)    # Diamond
     curses.init_pair(3, curses.COLOR_MAGENTA, -1) # Cursor
+    curses.init_pair(4, curses.COLOR_GREEN, -1)   # Start
 
     arrow_board = ArrowBoard(rows, cols, landmarks, start, arrows)
     arrow_board.edit(stdscr)
