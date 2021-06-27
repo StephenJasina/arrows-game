@@ -577,7 +577,6 @@ class ArrowBoard:
                 self.refresh(stdscr)
 
                 self.run(stdscr, self.start)
-                stdscr.getch()
 
                 # Then bring it back once we're finished
                 self.paint_cursor(cursor)
