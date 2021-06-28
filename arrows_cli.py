@@ -13,11 +13,8 @@ arrows, which arrow is red gets toggled (think of it like a train
 junction switching).
 """
 
-# TODO: Fix indentation and line lengths
-
 import copy
 import curses
-import time
 
 
 class ArrowBoard:
@@ -519,7 +516,7 @@ class ArrowBoard:
         stdscr.addstr(1, 0, f'arrows: {self._remaining_arrows} '
                       f'({self._total_arrows - self._remaining_arrows})')
 
-    def run(self, stdscr, delay=0.2):
+    def run(self, stdscr, delay=200):
         """
         Advance the board state until the position reaches the goal.
 
@@ -533,8 +530,7 @@ class ArrowBoard:
 
         delay = max(0, delay)
 
-        start_time = time.time_ns()
-        stdscr.timeout(0)
+        stdscr.timeout(delay)
 
         while True:
             # Paint the current position
@@ -548,32 +544,21 @@ class ArrowBoard:
 
             # Wait for the user to press a key, or for delay seconds to
             # pass
-            # TODO: Lessen CPU usage here with sleep
-            done = False
-            while (time.time_ns() - start_time) * 1e-9 < (moves + 1) * delay:
-                char = stdscr.getch()
+            char = stdscr.getch()
 
-                # If q is pressed, we should exit
-                if char == ord('q'):
-                    done = True
-
-                    # Reset the move counter so it is not misleading
-                    moves = -1
-                    break
-
-                # If p is pressed, pause until another key is pressed
-                if char == ord('p'):
-                    pause_time = time.time_ns()
-                    stdscr.timeout(-1)
-                    stdscr.getch()
-                    stdscr.timeout(0)
-                    start_time += time.time_ns() - pause_time
-
-                # If the screen is resized, we need to refresh
-                if char == curses.KEY_RESIZE:
-                    self.refresh(stdscr)
-            if done:
+            # If q is pressed, we should exit
+            if char == ord('q'):
                 break
+
+            # If p is pressed, pause until another key is pressed
+            if char == ord('p'):
+                stdscr.timeout(-1)
+                stdscr.getch()
+                stdscr.timeout(delay)
+
+            # If the screen is resized, we need to refresh
+            if char == curses.KEY_RESIZE:
+                self.refresh(stdscr)
 
             # If the diamond reached the goal, exit
             if ArrowBoard.GOAL in self._landmarks[position[0]][position[1]]:
