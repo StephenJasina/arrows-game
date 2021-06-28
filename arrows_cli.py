@@ -669,6 +669,7 @@ class ArrowBoard:
 
             # Exit when q is pressed
             if char == ord('q'):
+                self._erase_cursor(cursor)
                 break
 
 
@@ -681,9 +682,6 @@ def main(stdscr):
     landmarks[1][2].append(ArrowBoard.BOULDER)
     landmarks[2][4].append(ArrowBoard.GOAL)
     arrows = 999
-
-    rows = len(landmarks)
-    cols = len(landmarks[0])
 
     # Don't display the terminal cursor
     curses.curs_set(0)
