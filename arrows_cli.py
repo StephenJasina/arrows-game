@@ -599,9 +599,6 @@ class ArrowBoard:
         if delay > 0:
             self.erase_position(position)
 
-        # Update the move counter in case of "bad" exit
-        self.paint_moves(stdscr, moves)
-
         self.refresh(stdscr)
 
         stdscr.timeout(-1)
@@ -610,6 +607,9 @@ class ArrowBoard:
         self.directions = original_directions
         if delay > 0:
             self.paint_all_arrows()
+
+        # Update the move counter in case of "bad" exit
+        self.paint_moves(stdscr, self.get_moves())
 
         return moves
 
