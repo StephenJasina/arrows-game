@@ -616,16 +616,22 @@ class ArrowBoard:
             char = stdscr.getch()
 
             # Update the cursor position with wasd
-            self._erase_cursor(cursor)
-            if char == ord('w') and cursor[0] > 0:
-                cursor[0] -= 1
-            elif char == ord('a') and cursor[1] > 0:
-                cursor[1] -= 1
-            elif char == ord('s') and cursor[0] < self._rows - 1:
-                cursor[0] += 1
-            elif char == ord('d') and cursor[1] < self._cols - 1:
-                cursor[1] += 1
-            self._paint_cursor(cursor)
+            orientation = None
+            if char == ord('w'):
+                orientation = ArrowBoard.UP
+            elif char == ord('a'):
+                orientation = ArrowBoard.LEFT
+            elif char == ord('s'):
+                orientation = ArrowBoard.DOWN
+            elif char == ord('d'):
+                orientation = ArrowBoard.RIGHT
+            if orientation is not None:
+                new_cursor = ArrowBoard._cell_at_orientation(
+                    cursor, orientation)
+                if self._position_is_valid(new_cursor):
+                    self._erase_cursor(cursor)
+                    cursor = new_cursor
+                    self._paint_cursor(cursor)
 
             # Update the directions with arrows or okl;
             orientation = None
