@@ -13,9 +13,12 @@ arrows, which arrow is red gets toggled (think of it like a train
 junction switching).
 """
 
+# TODO: Fix indentation and line lengths
+
 import copy
 import curses
 import time
+
 
 class ArrowBoard:
     """Class to handle board manipulations and painting."""
@@ -31,7 +34,7 @@ class ArrowBoard:
     START = 'S'
     BOULDER = 'B'
 
-    def __init__(self, landmarks, arrows, row_height = 4, col_width = 6):
+    def __init__(self, landmarks, arrows, row_height=4, col_width=6):
         """
         Initialize the game board.
 
@@ -67,10 +70,10 @@ class ArrowBoard:
 
         # Arrows
         self._directions = [[list() for _ in range(self._cols)]
-                for _ in range(self._rows)]
+                            for _ in range(self._rows)]
 
         self._board = curses.newpad(self._rows * row_height + 1,
-                self._cols * col_width + 1)
+                                    self._cols * col_width + 1)
         self._paint_grid()
         self._paint_landmarks()
 
@@ -112,8 +115,8 @@ class ArrowBoard:
 
     def _paint_grid(self):
         """Paint the grid onto the board."""
-        # One less than the height and width of board in number of console
-        # characters
+        # One less than the height and width of board in number of
+        # console characters
         board_height = self._rows * self._row_height
         board_width = self._cols * self._col_width
 
@@ -122,15 +125,16 @@ class ArrowBoard:
         #     │
         #     │
         #     │
-        # Automatically pick the correct style of grid point for the top left
-        # character (to treat the corner and edge cases)
+        # Automatically pick the correct style of grid point for the top
+        # left character (to treat the corner and edge cases)
         for row in range(0, board_height, self._row_height):
             for col in range(0, board_width, self._col_width):
                 # Deal with the top left character
-                self._board.addch(row, col,
-                        (curses.ACS_ULCORNER if col == 0 else curses.ACS_TTEE)
-                        if row == 0 else
-                        (curses.ACS_LTEE if col == 0 else curses.ACS_PLUS))
+                self._board.addch(
+                    row, col,
+                    (curses.ACS_ULCORNER if col == 0 else curses.ACS_TTEE)
+                    if row == 0 else
+                    (curses.ACS_LTEE if col == 0 else curses.ACS_PLUS))
                 # Paint the vertical lines
                 for i in range(1, self._row_height):
                     self._board.addch(row + i, col, curses.ACS_VLINE)
@@ -138,16 +142,18 @@ class ArrowBoard:
                 for j in range(1, self._col_width):
                     self._board.addch(row, col + j, curses.ACS_HLINE)
 
-        # Paint the missing right hand edge of the grid by painting shapes like
+        # Paint the missing right hand edge of the grid by painting
+        # shapes like
         #     ┤
         #     │
         #     │
         #     │
         for row in range(0, board_height, self._row_height):
-            # We need to print ┤ unless we are in the corner, in which case we
-            # use ┐
-            self._board.addch(row, board_width,
-                    curses.ACS_URCORNER if row == 0 else curses.ACS_RTEE)
+            # We need to print ┤ unless we are in the corner, in which
+            # case we use ┐
+            self._board.addch(
+                row, board_width,
+                curses.ACS_URCORNER if row == 0 else curses.ACS_RTEE)
             # Paint the vertical lines
             for i in range(1, self._row_height):
                 self._board.addch(row + i, board_width, curses.ACS_VLINE)
@@ -155,13 +161,14 @@ class ArrowBoard:
         # Do similar for the bottom edge of the board with shapes like
         # ┴─────
         for col in range(0, board_width, self._col_width):
-            self._board.addch(board_height, col,
-                    curses.ACS_LLCORNER if col == 0 else curses.ACS_BTEE)
+            self._board.addch(
+                board_height, col,
+                curses.ACS_LLCORNER if col == 0 else curses.ACS_BTEE)
             for j in range(1, self._col_width):
                 self._board.addch(board_height, col + j, curses.ACS_HLINE)
 
-        # Finish by painting the bottom right corner with ┘. Use insch here to
-        # avoid throwing an exception
+        # Finish by painting the bottom right corner with ┘. Use insch
+        # here to avoid throwing an exception
         self._board.insch(board_height, board_width, curses.ACS_LRCORNER)
         return self._board
 
@@ -172,20 +179,20 @@ class ArrowBoard:
 
         if orientation == ArrowBoard.UP:
             self._board.addch(row * self._row_height,
-                    col * self._col_width + self._col_width // 2,
-                    curses.ACS_HLINE)
+                              col * self._col_width + self._col_width // 2,
+                              curses.ACS_HLINE)
         elif orientation == ArrowBoard.LEFT:
             self._board.addch(row * self._row_height + self._row_height // 2,
-                    col * self._col_width,
-                    curses.ACS_VLINE)
+                              col * self._col_width,
+                              curses.ACS_VLINE)
         elif orientation == ArrowBoard.DOWN:
             self._board.addch(row * self._row_height + self._row_height,
-                    col * self._col_width + self._col_width // 2,
-                    curses.ACS_HLINE)
+                              col * self._col_width + self._col_width // 2,
+                              curses.ACS_HLINE)
         elif orientation == ArrowBoard.RIGHT:
             self._board.addch(row * self._row_height + self._row_height // 2,
-                    col * self._col_width + self._col_width,
-                    curses.ACS_VLINE)
+                              col * self._col_width + self._col_width,
+                              curses.ACS_VLINE)
 
     def _paint_arrows(self, position):
         """Paint all necessary arrows from a position onto the board."""
@@ -193,28 +200,31 @@ class ArrowBoard:
         col = position[1]
 
         for i, orientation in enumerate(self._directions[row][col]):
-            # If the orientation is the first in the list, then use a bolded
-            # red style
+            # If the orientation is the first in the list, then use a
+            # bolded red style
             attributes = curses.A_BOLD | curses.color_pair(1) if i == 0 else 0
 
-            # Paint the correct arrow in the correct orientation. Note that
-            # this only really works if row_height and col_width are even
+            # Paint the correct arrow in the correct orientation. Note
+            # that this only really works if row_height and col_width
+            # are even
             if orientation == ArrowBoard.UP:
                 self._board.addch(row * self._row_height,
-                        col * self._col_width + self._col_width // 2,
-                        curses.ACS_UARROW, attributes)
+                                  col * self._col_width + self._col_width // 2,
+                                  curses.ACS_UARROW, attributes)
             elif orientation == ArrowBoard.LEFT:
-                self._board.addch(row * self._row_height + self._row_height // 2,
-                        col * self._col_width,
-                        curses.ACS_LARROW, attributes)
+                self._board.addch(
+                    row * self._row_height + self._row_height // 2,
+                    col * self._col_width,
+                    curses.ACS_LARROW, attributes)
             elif orientation == ArrowBoard.DOWN:
                 self._board.addch(row * self._row_height + self._row_height,
-                        col * self._col_width + self._col_width // 2,
-                        curses.ACS_DARROW, attributes)
+                                  col * self._col_width + self._col_width // 2,
+                                  curses.ACS_DARROW, attributes)
             elif orientation == ArrowBoard.RIGHT:
-                self._board.addch(row * self._row_height + self._row_height // 2,
-                        col * self._col_width + self._col_width,
-                        curses.ACS_RARROW, attributes)
+                self._board.addch(
+                    row * self._row_height + self._row_height // 2,
+                    col * self._col_width + self._col_width,
+                    curses.ACS_RARROW, attributes)
 
     def _paint_all_arrows(self):
         """Paints all necessary arrows onto the board."""
@@ -230,83 +240,89 @@ class ArrowBoard:
                 if ArrowBoard.START in landmark:
                     # Paint a box
                     self._board.addch(
-                            row * self._row_height + self._row_height // 2 - 1,
-                            col * self._col_width + self._col_width // 2 - 1,
-                            curses.ACS_ULCORNER, curses.color_pair(4))
+                        row * self._row_height + self._row_height // 2 - 1,
+                        col * self._col_width + self._col_width // 2 - 1,
+                        curses.ACS_ULCORNER, curses.color_pair(4))
                     self._board.addch(
-                            row * self._row_height + self._row_height // 2 - 1,
-                            col * self._col_width + self._col_width // 2,
-                            curses.ACS_HLINE, curses.color_pair(4))
+                        row * self._row_height + self._row_height // 2 - 1,
+                        col * self._col_width + self._col_width // 2,
+                        curses.ACS_HLINE, curses.color_pair(4))
                     self._board.addch(
-                            row * self._row_height + self._row_height // 2 - 1,
-                            col * self._col_width + self._col_width // 2 + 1,
-                            curses.ACS_URCORNER, curses.color_pair(4))
+                        row * self._row_height + self._row_height // 2 - 1,
+                        col * self._col_width + self._col_width // 2 + 1,
+                        curses.ACS_URCORNER, curses.color_pair(4))
                     self._board.addch(
-                            row * self._row_height + self._row_height // 2,
-                            col * self._col_width + self._col_width // 2 - 1,
-                            curses.ACS_VLINE, curses.color_pair(4))
+                        row * self._row_height + self._row_height // 2,
+                        col * self._col_width + self._col_width // 2 - 1,
+                        curses.ACS_VLINE, curses.color_pair(4))
                     self._board.addch(
-                            row * self._row_height + self._row_height // 2,
-                            col * self._col_width + self._col_width // 2 + 1,
-                            curses.ACS_VLINE, curses.color_pair(4))
+                        row * self._row_height + self._row_height // 2,
+                        col * self._col_width + self._col_width // 2 + 1,
+                        curses.ACS_VLINE, curses.color_pair(4))
                     self._board.addch(
-                            row * self._row_height + self._row_height // 2 + 1,
-                            col * self._col_width + self._col_width // 2 - 1,
-                            curses.ACS_LLCORNER, curses.color_pair(4))
+                        row * self._row_height + self._row_height // 2 + 1,
+                        col * self._col_width + self._col_width // 2 - 1,
+                        curses.ACS_LLCORNER, curses.color_pair(4))
                     self._board.addch(
-                            row * self._row_height + self._row_height // 2 + 1,
-                            col * self._col_width + self._col_width // 2,
-                            curses.ACS_HLINE, curses.color_pair(4))
+                        row * self._row_height + self._row_height // 2 + 1,
+                        col * self._col_width + self._col_width // 2,
+                        curses.ACS_HLINE, curses.color_pair(4))
                     self._board.addch(
-                            row * self._row_height + self._row_height // 2 + 1,
-                            col * self._col_width + self._col_width // 2 + 1,
-                            curses.ACS_LRCORNER, curses.color_pair(4))
+                        row * self._row_height + self._row_height // 2 + 1,
+                        col * self._col_width + self._col_width // 2 + 1,
+                        curses.ACS_LRCORNER, curses.color_pair(4))
                 if ArrowBoard.GOAL in landmark:
                     # Paint a checkerboard
                     for i in range(1, self._row_height):
                         for j in range(1, self._col_width):
                             if (i + j) % 2 == 0:
                                 self._board.addch(row * self._row_height + i,
-                                        col * self._col_width + j,
-                                        ' ', curses.A_REVERSE)
+                                                  col * self._col_width + j,
+                                                  ' ', curses.A_REVERSE)
                 if ArrowBoard.BOULDER in landmark:
                     # Block off all exits/entrances
-                    self._board.addch(row * self._row_height,
+                    self._board.addch(
+                        row * self._row_height,
                         col * self._col_width + self._col_width // 2,
                         curses.ACS_BLOCK, curses.color_pair(1))
                     self._board.addch(
-                            row * self._row_height + self._row_height // 2,
-                            col * self._col_width,
-                            curses.ACS_BLOCK, curses.color_pair(1))
-                    self._board.addch(row * self._row_height + self._row_height,
-                            col * self._col_width + self._col_width // 2,
-                            curses.ACS_BLOCK, curses.color_pair(1))
+                        row * self._row_height + self._row_height // 2,
+                        col * self._col_width,
+                        curses.ACS_BLOCK, curses.color_pair(1))
                     self._board.addch(
-                            row * self._row_height + self._row_height // 2,
-                            col * self._col_width + self._col_width,
-                            curses.ACS_BLOCK, curses.color_pair(1))
+                        row * self._row_height + self._row_height,
+                        col * self._col_width + self._col_width // 2,
+                        curses.ACS_BLOCK, curses.color_pair(1))
+                    self._board.addch(
+                        row * self._row_height + self._row_height // 2,
+                        col * self._col_width + self._col_width,
+                        curses.ACS_BLOCK, curses.color_pair(1))
 
     def _paint_cursor(self, position):
         """Paint the cursor as an asterisk."""
-        self._board.addch(position[0] * self._row_height + self._row_height // 2,
-                position[1] * self._col_width + self._col_width // 2,
-                '*', curses.color_pair(3))
+        self._board.addch(
+            position[0] * self._row_height + self._row_height // 2,
+            position[1] * self._col_width + self._col_width // 2,
+            '*', curses.color_pair(3))
 
     def _erase_cursor(self, position):
         """Erase the cursor so that it doesn't leave a trail."""
-        self._board.addch(position[0] * self._row_height + self._row_height // 2,
-                position[1] * self._col_width + self._col_width // 2, ' ')
+        self._board.addch(
+            position[0] * self._row_height + self._row_height // 2,
+            position[1] * self._col_width + self._col_width // 2, ' ')
 
     def _paint_position(self, position):
         """Paint the current position as a diamond."""
-        self._board.addch(position[0] * self._row_height + self._row_height // 2,
-                position[1] * self._col_width + self._col_width // 2,
-                curses.ACS_DIAMOND, curses.color_pair(2))
+        self._board.addch(
+            position[0] * self._row_height + self._row_height // 2,
+            position[1] * self._col_width + self._col_width // 2,
+            curses.ACS_DIAMOND, curses.color_pair(2))
 
     def _erase_position(self, position):
         """Erase the cyan diamond so that it doesn't leave a trail."""
-        self._board.addch(position[0] * self._row_height + self._row_height // 2,
-                position[1] * self._col_width + self._col_width // 2, ' ')
+        self._board.addch(
+            position[0] * self._row_height + self._row_height // 2,
+            position[1] * self._col_width + self._col_width // 2, ' ')
 
     def _advance(self, position, directions=None):
         """
@@ -361,18 +377,17 @@ class ArrowBoard:
 
         landmark = self._landmarks[position[0]][position[1]]
 
-        if ArrowBoard.GOAL in landmark \
-                or ArrowBoard.BOULDER in landmark:
+        if ArrowBoard.GOAL in landmark or ArrowBoard.BOULDER in landmark:
             return False
 
-        nonlocal_position \
-                = ArrowBoard._cell_at_orientation(position, orientation)
+        nonlocal_position = ArrowBoard._cell_at_orientation(
+            position, orientation)
 
         if not self._position_is_valid(nonlocal_position):
             return False
 
-        nonlocal_landmark \
-                = self._landmarks[nonlocal_position[0]][nonlocal_position[1]]
+        nonlocal_landmark = (
+            self._landmarks[nonlocal_position[0]][nonlocal_position[1]])
 
         if ArrowBoard.BOULDER in nonlocal_landmark:
             return False
@@ -388,20 +403,20 @@ class ArrowBoard:
         arrow we're trying to add is valid to add.
         """
         # First handle if an arrow already exists
-        nonlocal_position \
-                = ArrowBoard._cell_at_orientation(position, orientation)
+        nonlocal_position = ArrowBoard._cell_at_orientation(
+            position, orientation)
 
-        # If the nonlocal position doesn't actually exist, don't do anything
-        # since we can't go in that direction anyways
+        # If the nonlocal position doesn't actually exist, don't do
+        # anything since we can't go in that direction anyways
         if not self._position_is_valid(nonlocal_position):
             return
 
         nonlocal_orientation = ArrowBoard._opposite_orientation(orientation)
 
-        nonlocal_direction \
-                = self._directions[nonlocal_position[0]][nonlocal_position[1]]
-        index = nonlocal_direction.index(nonlocal_orientation) \
-                if nonlocal_orientation in nonlocal_direction else None
+        nonlocal_direction = (
+            self._directions[nonlocal_position[0]][nonlocal_position[1]])
+        index = (nonlocal_direction.index(nonlocal_orientation)
+                 if nonlocal_orientation in nonlocal_direction else None)
         if index is not None:
             del nonlocal_direction[index]
             self._remaining_arrows += 1
@@ -464,16 +479,16 @@ class ArrowBoard:
         moves = 0
 
         while True:
-            if ArrowBoard.GOAL \
-                    in self._landmarks[hare_position[0]][hare_position[1]]:
+            if ArrowBoard.GOAL in (
+                    self._landmarks[hare_position[0]][hare_position[1]]):
                 return moves
 
             if not self._advance(hare_position, hare_directions):
                 return -1
             moves += 1
 
-            if ArrowBoard.GOAL \
-                    in self._landmarks[hare_position[0]][hare_position[1]]:
+            if ArrowBoard.GOAL in (
+                    self._landmarks[hare_position[0]][hare_position[1]]):
                 return moves
 
             if not self._advance(hare_position, hare_directions):
@@ -482,8 +497,8 @@ class ArrowBoard:
 
             self._advance(tortoise_position, tortoise_directions)
 
-            if tortoise_position == hare_position \
-                    and tortoise_directions == hare_directions:
+            if (tortoise_position == hare_position
+                    and tortoise_directions == hare_directions):
                 return -1
 
     @staticmethod
@@ -502,9 +517,9 @@ class ArrowBoard:
         stdscr.move(1, 0)
         stdscr.clrtoeol()
         stdscr.addstr(1, 0, f'arrows: {self._remaining_arrows} '
-                f'({self._total_arrows - self._remaining_arrows})')
+                      f'({self._total_arrows - self._remaining_arrows})')
 
-    def run(self, stdscr, delay=0.1):
+    def run(self, stdscr, delay=0.2):
         """
         Advance the board state until the position reaches the goal.
 
@@ -531,10 +546,11 @@ class ArrowBoard:
             # Update the screen
             self.refresh(stdscr)
 
-            # Wait for the user to press a key, or for delay seconds to pass
+            # Wait for the user to press a key, or for delay seconds to
+            # pass
+            # TODO: Lessen CPU usage here with sleep
             done = False
-            while (time.time_ns() - start_time) * 1e-9 \
-                    < (moves + 1) * delay:
+            while (time.time_ns() - start_time) * 1e-9 < (moves + 1) * delay:
                 char = stdscr.getch()
 
                 # If q is pressed, we should exit
@@ -655,9 +671,8 @@ class ArrowBoard:
 
             # Reset the board when r is pressed
             if char == ord('r'):
-                self._directions \
-                        = [[list() for _ in range(self._cols)]
-                                for _ in range(self._rows)]
+                self._directions = [[list() for _ in range(self._cols)]
+                                    for _ in range(self._rows)]
                 self._remaining_arrows = self._total_arrows
                 self._paint_grid()
                 self._paint_landmarks()
@@ -667,6 +682,7 @@ class ArrowBoard:
             # Exit when q is pressed
             if char == ord('q'):
                 break
+
 
 def main(stdscr):
     """Run a simple example board."""
@@ -687,13 +703,14 @@ def main(stdscr):
     # Setup color support if available
     curses.start_color()
     curses.use_default_colors()
-    curses.init_pair(1, curses.COLOR_RED, -1)     # Arrows
-    curses.init_pair(2, curses.COLOR_CYAN, -1)    # Diamond
-    curses.init_pair(3, curses.COLOR_MAGENTA, -1) # Cursor
-    curses.init_pair(4, curses.COLOR_GREEN, -1)   # Start
+    curses.init_pair(1, curses.COLOR_RED, -1)      # Arrows
+    curses.init_pair(2, curses.COLOR_CYAN, -1)     # Diamond
+    curses.init_pair(3, curses.COLOR_MAGENTA, -1)  # Cursor
+    curses.init_pair(4, curses.COLOR_GREEN, -1)    # Start
 
     arrow_board = ArrowBoard(landmarks, arrows)
     arrow_board.edit(stdscr)
+
 
 if __name__ == '__main__':
     curses.wrapper(main)
