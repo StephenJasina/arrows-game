@@ -50,6 +50,48 @@ class ArrowBoard:
         self.paint_grid()
         self.paint_landmarks()
 
+    @staticmethod
+    def opposite_orientation(orientation):
+        '''
+        Returns the opposite orientation of the input (or None on invalid
+        input).
+        '''
+
+        if orientation == ArrowBoard.UP:
+            return ArrowBoard.DOWN
+        if orientation == ArrowBoard.LEFT:
+            return ArrowBoard.RIGHT
+        if orientation == ArrowBoard.DOWN:
+            return ArrowBoard.UP
+        if orientation == ArrowBoard.RIGHT:
+            return ArrowBoard.LEFT
+        return None
+
+    @staticmethod
+    def cell_at_orientation(position, orientation):
+        '''
+        Return the cell coordinates if, starting at position, we were to move
+        in the direction of orientation.
+        '''
+
+        position = list(position)
+        if orientation == ArrowBoard.UP:
+            position[0] -= 1
+        elif orientation == ArrowBoard.LEFT:
+            position[1] -= 1
+        elif orientation == ArrowBoard.DOWN:
+            position[0] += 1
+        elif orientation == ArrowBoard.RIGHT:
+            position[1] += 1
+        return position
+
+    def position_is_valid(self, position):
+        '''
+        Return whether position is within our board.
+        '''
+
+        return 0 <= position[0] < self.rows and 0 <= position[1] < self.cols
+
     def paint_grid(self):
         '''
         Paints a grid onto the board.
@@ -107,23 +149,6 @@ class ArrowBoard:
         # avoid throwing an exception
         self.board.insch(board_height, board_width, curses.ACS_LRCORNER)
         return self.board
-
-    @staticmethod
-    def opposite_orientation(orientation):
-        '''
-        Returns the opposite orientation of the input (or None on invalid
-        input).
-        '''
-
-        if orientation == ArrowBoard.UP:
-            return ArrowBoard.DOWN
-        if orientation == ArrowBoard.LEFT:
-            return ArrowBoard.RIGHT
-        if orientation == ArrowBoard.DOWN:
-            return ArrowBoard.UP
-        if orientation == ArrowBoard.RIGHT:
-            return ArrowBoard.LEFT
-        return None
 
     def erase_arrow(self, position, orientation):
         '''
@@ -278,31 +303,6 @@ class ArrowBoard:
         self.board.addch(position[0] * self.row_height + self.row_height // 2,
                 position[1] * self.col_width + self.col_width // 2, ' ')
 
-    @staticmethod
-    def cell_at_orientation(position, orientation):
-        '''
-        Return the cell coordinates if, starting at position, we were to move
-        in the direction of orientation.
-        '''
-
-        position = list(position)
-        if orientation == ArrowBoard.UP:
-            position[0] -= 1
-        elif orientation == ArrowBoard.LEFT:
-            position[1] -= 1
-        elif orientation == ArrowBoard.DOWN:
-            position[0] += 1
-        elif orientation == ArrowBoard.RIGHT:
-            position[1] += 1
-        return position
-
-    def position_is_valid(self, position):
-        '''
-        Return whether position is within our board.
-        '''
-
-        return 0 <= position[0] < self.rows and 0 <= position[1] < self.cols
-
     def advance(self, position, directions=None):
         '''
         Advances position as according to directions. That is, if we are at the
@@ -346,6 +346,87 @@ class ArrowBoard:
         stdscr.noutrefresh()
         maxy, maxx = stdscr.getmaxyx()
         self.board.refresh(0, 0, 2, 0, maxy - 1, maxx - 1)
+
+    def add_orientation(self, position, orientation):
+        '''
+        Adds an arrow at position in the direction of orientation. If an arrow
+        already exists there pointing in the opposite direction, removes that
+        arrow.
+
+        This assumes the arrow we're trying to add is valid to add.
+        '''
+
+        # First handle if an arrow already exists
+        nonlocal_position \
+                = ArrowBoard.cell_at_orientation(position, orientation)
+
+        # If the nonlocal position doesn't actually exist, don't do anything
+        # since we can't go in that direction anyways
+        if not self.position_is_valid(nonlocal_position):
+            return
+
+        nonlocal_orientation = ArrowBoard.opposite_orientation(orientation)
+
+        nonlocal_direction \
+                = self.directions[nonlocal_position[0]][nonlocal_position[1]]
+        index = nonlocal_direction.index(nonlocal_orientation) \
+                if nonlocal_orientation in nonlocal_direction else None
+        if index is not None:
+            del nonlocal_direction[index]
+            self.remaining_arrows += 1
+            self.erase_arrow(nonlocal_position, nonlocal_orientation)
+
+        # Now we can safely add the arrow
+        if self.remaining_arrows > 0:
+            direction = self.directions[position[0]][position[1]]
+            direction.insert(0, orientation)
+            self.remaining_arrows -= 1
+            self.paint_arrows(position)
+
+    def process_orientation(self, cursor, orientation):
+        '''
+        Adds/removes/changes an arrow to/from/on the board.
+        '''
+
+        row = cursor[0]
+        column = cursor[1]
+
+        if ArrowBoard.GOAL in self.landmarks[row][column]:
+            return
+
+        direction = self.directions[row][column]
+        if not direction:
+            self.add_orientation(cursor, orientation)
+        elif len(direction) == 1:
+            if direction[0] == orientation:
+                self.erase_arrow(cursor, orientation)
+                del direction[0]
+                self.remaining_arrows += 1
+            else:
+                self.add_orientation(cursor, orientation)
+        else:
+            if direction[0] == orientation:
+                self.erase_arrow(cursor, orientation)
+                del direction[0]
+                self.remaining_arrows += 1
+                self.paint_arrows(cursor)
+            elif direction[1] == orientation:
+                direction[0], direction[1] = direction[1], direction[0]
+                self.paint_arrows(cursor)
+            else:
+                self.erase_arrow(cursor, direction[1])
+                del direction[1]
+                self.remaining_arrows += 1
+                self.add_orientation(cursor, orientation)
+
+    def get_moves(self):
+        '''
+        Returns (without any animation) the number of moves the current
+        directions would yield. Returns -1 if the diamond would never reach the
+        goal.
+        '''
+
+        # TODO: Use Floyd's cycle detection algorithm here
 
     def run(self, stdscr, position, delay=0.1):
         '''
@@ -441,87 +522,6 @@ class ArrowBoard:
             self.paint_all_arrows()
 
         return moves
-
-    def get_moves(self):
-        '''
-        Returns (without any animation) the number of moves the current
-        directions would yield. Returns -1 if the diamond would never reach the
-        goal.
-        '''
-
-        # TODO: Use Floyd's cycle detection algorithm here
-
-    def add_orientation(self, position, orientation):
-        '''
-        Adds an arrow at position in the direction of orientation. If an arrow
-        already exists there pointing in the opposite direction, removes that
-        arrow.
-
-        This assumes the arrow we're trying to add is valid to add.
-        '''
-
-        # First handle if an arrow already exists
-        nonlocal_position \
-                = ArrowBoard.cell_at_orientation(position, orientation)
-
-        # If the nonlocal position doesn't actually exist, don't do anything
-        # since we can't go in that direction anyways
-        if not self.position_is_valid(nonlocal_position):
-            return
-
-        nonlocal_orientation = ArrowBoard.opposite_orientation(orientation)
-
-        nonlocal_direction \
-                = self.directions[nonlocal_position[0]][nonlocal_position[1]]
-        index = nonlocal_direction.index(nonlocal_orientation) \
-                if nonlocal_orientation in nonlocal_direction else None
-        if index is not None:
-            del nonlocal_direction[index]
-            self.remaining_arrows += 1
-            self.erase_arrow(nonlocal_position, nonlocal_orientation)
-
-        # Now we can safely add the arrow
-        if self.remaining_arrows > 0:
-            direction = self.directions[position[0]][position[1]]
-            direction.insert(0, orientation)
-            self.remaining_arrows -= 1
-            self.paint_arrows(position)
-
-    def process_orientation(self, cursor, orientation):
-        '''
-        Adds/removes/changes an arrow to/from/on the board.
-        '''
-
-        row = cursor[0]
-        column = cursor[1]
-
-        if ArrowBoard.GOAL in self.landmarks[row][column]:
-            return
-
-        direction = self.directions[row][column]
-        if not direction:
-            self.add_orientation(cursor, orientation)
-        elif len(direction) == 1:
-            if direction[0] == orientation:
-                self.erase_arrow(cursor, orientation)
-                del direction[0]
-                self.remaining_arrows += 1
-            else:
-                self.add_orientation(cursor, orientation)
-        else:
-            if direction[0] == orientation:
-                self.erase_arrow(cursor, orientation)
-                del direction[0]
-                self.remaining_arrows += 1
-                self.paint_arrows(cursor)
-            elif direction[1] == orientation:
-                direction[0], direction[1] = direction[1], direction[0]
-                self.paint_arrows(cursor)
-            else:
-                self.erase_arrow(cursor, direction[1])
-                del direction[1]
-                self.remaining_arrows += 1
-                self.add_orientation(cursor, orientation)
 
     def edit(self, stdscr):
         '''
