@@ -694,6 +694,7 @@ class ArrowBoard:
                                 for _ in range(self.rows)]
                 self.remaining_arrows = self.total_arrows
                 self.paint_grid()
+                self.paint_landmarks()
 
                 self.paint_arrow_count(stdscr)
 
