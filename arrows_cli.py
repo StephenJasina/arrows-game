@@ -22,6 +22,7 @@ class ArrowBoard:
     # Landmarks
     GOAL = 'G'
     START = 'S'
+    BOULDER = 'B'
 
     def __init__(self, rows, cols, landmarks, start, arrows,
             row_height = 4, col_width = 6):
@@ -268,6 +269,22 @@ class ArrowBoard:
                                 self.board.addch(row * self.row_height + i,
                                         col * self.col_width + j,
                                         ' ', curses.A_REVERSE)
+                if ArrowBoard.BOULDER in landmark:
+                    # Block off all exits/entrances
+                    self.board.addch(row * self.row_height,
+                        col * self.col_width + self.col_width // 2,
+                        curses.ACS_BLOCK, curses.color_pair(1))
+                    self.board.addch(
+                            row * self.row_height + self.row_height // 2,
+                            col * self.col_width,
+                            curses.ACS_BLOCK, curses.color_pair(1))
+                    self.board.addch(row * self.row_height + self.row_height,
+                            col * self.col_width + self.col_width // 2,
+                            curses.ACS_BLOCK, curses.color_pair(1))
+                    self.board.addch(
+                            row * self.row_height + self.row_height // 2,
+                            col * self.col_width + self.col_width,
+                            curses.ACS_BLOCK, curses.color_pair(1))
 
     def paint_cursor(self, position):
         '''
@@ -347,6 +364,35 @@ class ArrowBoard:
         maxy, maxx = stdscr.getmaxyx()
         self.board.refresh(0, 0, 2, 0, maxy - 1, maxx - 1)
 
+    def can_add_orientation(self, position, orientation):
+        '''
+        Returns whether it is a legal move to add an arrow at position in the
+        direction of orientation.
+        '''
+
+        if not self.position_is_valid(position):
+            return False
+
+        landmark = self.landmarks[position[0]][position[1]]
+
+        if ArrowBoard.GOAL in landmark \
+                or ArrowBoard.BOULDER in landmark:
+            return False
+
+        nonlocal_position \
+                = ArrowBoard.cell_at_orientation(position, orientation)
+
+        if not self.position_is_valid(nonlocal_position):
+            return False
+
+        nonlocal_landmark \
+                = self.landmarks[nonlocal_position[0]][nonlocal_position[1]]
+
+        if ArrowBoard.BOULDER in nonlocal_landmark:
+            return False
+
+        return True
+
     def add_orientation(self, position, orientation):
         '''
         Adds an arrow at position in the direction of orientation. If an arrow
@@ -383,41 +429,43 @@ class ArrowBoard:
             self.remaining_arrows -= 1
             self.paint_arrows(position)
 
-    def process_orientation(self, cursor, orientation):
+    def process_orientation(self, position, orientation):
         '''
         Adds/removes/changes an arrow to/from/on the board.
         '''
 
-        row = cursor[0]
-        column = cursor[1]
+        row = position[0]
+        column = position[1]
 
-        if ArrowBoard.GOAL in self.landmarks[row][column]:
-            return
+        addable = self.can_add_orientation(position, orientation)
 
         direction = self.directions[row][column]
         if not direction:
-            self.add_orientation(cursor, orientation)
+            if addable:
+                self.add_orientation(position, orientation)
         elif len(direction) == 1:
             if direction[0] == orientation:
-                self.erase_arrow(cursor, orientation)
+                self.erase_arrow(position, orientation)
                 del direction[0]
                 self.remaining_arrows += 1
             else:
-                self.add_orientation(cursor, orientation)
+                if addable:
+                    self.add_orientation(position, orientation)
         else:
             if direction[0] == orientation:
-                self.erase_arrow(cursor, orientation)
+                self.erase_arrow(position, orientation)
                 del direction[0]
                 self.remaining_arrows += 1
-                self.paint_arrows(cursor)
+                self.paint_arrows(position)
             elif direction[1] == orientation:
                 direction[0], direction[1] = direction[1], direction[0]
-                self.paint_arrows(cursor)
+                self.paint_arrows(position)
             else:
-                self.erase_arrow(cursor, direction[1])
-                del direction[1]
-                self.remaining_arrows += 1
-                self.add_orientation(cursor, orientation)
+                if addable:
+                    self.erase_arrow(position, direction[1])
+                    del direction[1]
+                    self.remaining_arrows += 1
+                    self.add_orientation(position, orientation)
 
     def get_moves(self):
         '''
@@ -650,6 +698,7 @@ def main(stdscr):
     cols = 5
     landmarks = [[list() for _ in range(cols)] for _ in range(rows)]
     landmarks[2][4].append(ArrowBoard.GOAL)
+    landmarks[1][2].append(ArrowBoard.BOULDER)
     start = [0, 0]
     arrows = 999
 
