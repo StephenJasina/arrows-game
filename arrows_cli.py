@@ -24,7 +24,7 @@ class ArrowBoard:
     START = 'S'
     BOULDER = 'B'
 
-    def __init__(self, rows, cols, landmarks, start, arrows,
+    def __init__(self, landmarks, arrows,
             row_height = 4, col_width = 6):
         '''
         Creates a curses pad that can hold a grid with the specified number of
@@ -32,22 +32,33 @@ class ArrowBoard:
         each column has col_width - 1 empty cells. Also, saves board size
         information.
         '''
-        self.rows = rows
-        self.cols = cols
+        self.rows = len(landmarks)
+        self.cols = len(landmarks[0])
 
         self.landmarks = landmarks
-        self.start = start
+
+        self.start = None
+        for row in range(self.rows):
+            for col in range(self.cols):
+                if ArrowBoard.START in landmarks[row][col]:
+                    self.start = [row, col]
+                    break
+            if self.start is not None:
+                break
+
         self.total_arrows = arrows
         self.remaining_arrows = arrows
 
-        self.landmarks[start[0]][start[1]].append(ArrowBoard.START)
+        self.landmarks[self.start[0]][self.start[1]].append(ArrowBoard.START)
 
         self.row_height = row_height
         self.col_width = col_width
 
-        self.directions = [[list() for _ in range(cols)] for _ in range(rows)]
+        self.directions = [[list() for _ in range(self.cols)]
+                for _ in range(self.rows)]
 
-        self.board = curses.newpad(rows * row_height + 1, cols * col_width + 1)
+        self.board = curses.newpad(self.rows * row_height + 1,
+                self.cols * col_width + 1)
         self.paint_grid()
         self.paint_landmarks()
 
@@ -504,7 +515,8 @@ class ArrowBoard:
                     and tortoise_directions == hare_directions:
                 return -1
 
-    def paint_moves(self, stdscr, moves):
+    @staticmethod
+    def paint_moves(stdscr, moves):
         '''
         Write the number of moves. In case moves is negative, write "infinity"
         instead.
@@ -697,9 +709,9 @@ def main(stdscr):
     rows = 3
     cols = 5
     landmarks = [[list() for _ in range(cols)] for _ in range(rows)]
-    landmarks[2][4].append(ArrowBoard.GOAL)
+    landmarks[0][0].append(ArrowBoard.START)
     landmarks[1][2].append(ArrowBoard.BOULDER)
-    start = [0, 0]
+    landmarks[2][4].append(ArrowBoard.GOAL)
     arrows = 999
 
     rows = len(landmarks)
@@ -716,7 +728,7 @@ def main(stdscr):
     curses.init_pair(3, curses.COLOR_MAGENTA, -1) # Cursor
     curses.init_pair(4, curses.COLOR_GREEN, -1)   # Start
 
-    arrow_board = ArrowBoard(rows, cols, landmarks, start, arrows)
+    arrow_board = ArrowBoard(landmarks, arrows)
     arrow_board.edit(stdscr)
 
 curses.wrapper(main)
