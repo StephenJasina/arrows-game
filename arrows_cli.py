@@ -456,6 +456,26 @@ class ArrowBoard:
                     and tortoise_directions == hare_directions:
                 return -1
 
+    def paint_moves(self, stdscr, moves):
+        '''
+        Write the number of moves. In case moves is negative, write "infinity"
+        instead.
+        '''
+
+        stdscr.move(0, 0)
+        stdscr.clrtoeol()
+        stdscr.addstr(0, 0, f'moves: {moves if moves >= 0 else "infinity"}')
+
+    def paint_arrow_count(self, stdscr):
+        '''
+        Write the number of arrows remaining, as well as the number used.
+        '''
+
+        stdscr.move(1, 0)
+        stdscr.clrtoeol()
+        stdscr.addstr(1, 0, f'arrows: {self.remaining_arrows} '
+                f'({self.total_arrows - self.remaining_arrows})')
+
     def run(self, stdscr, delay=0.1):
         '''
         Repeatedly advance the board state until the position reaches the goal
@@ -469,10 +489,6 @@ class ArrowBoard:
 
         delay = max(0, delay)
 
-        # Reset the move counter
-        stdscr.move(0, 0)
-        stdscr.clrtoeol()
-
         start_time = time.time_ns()
         stdscr.timeout(0)
 
@@ -481,7 +497,7 @@ class ArrowBoard:
             self.paint_position(position)
 
             # Display the number of moves
-            stdscr.addstr(0, 0, f'moves: {moves}')
+            self.paint_moves(stdscr, moves)
 
             # Update the screen
             self.refresh(stdscr)
@@ -536,9 +552,7 @@ class ArrowBoard:
             self.erase_position(position)
 
         # Update the move counter in case of "bad" exit
-        stdscr.move(0, 0)
-        stdscr.clrtoeol()
-        stdscr.addstr(0, 0, f'moves: {moves if moves != -1 else "infinity"}')
+        self.paint_moves(stdscr, moves)
 
         self.refresh(stdscr)
 
@@ -562,8 +576,7 @@ class ArrowBoard:
         self.paint_cursor(cursor)
 
         # Paint the number of arrows remaining
-        stdscr.addstr(1, 0, f'arrows: {self.remaining_arrows} '
-                f'({self.total_arrows - self.remaining_arrows})')
+        self.paint_arrow_count(stdscr)
 
         while True:
             # Update the screen
@@ -598,17 +611,10 @@ class ArrowBoard:
                 self.process_orientation(cursor, orientation)
 
                 # Repaint the number of arrows remaining
-                stdscr.move(1, 0)
-                stdscr.clrtoeol()
-                stdscr.addstr(1, 0, f'arrows: {self.remaining_arrows} '
-                        f'({self.total_arrows - self.remaining_arrows})')
+                self.paint_arrow_count(stdscr)
 
                 # Update the number of moves
-                moves = self.get_moves()
-                stdscr.move(0, 0)
-                stdscr.clrtoeol()
-                stdscr.addstr(0, 0, f'moves: '
-                        f'{moves if moves != -1 else "infinity"}')
+                self.paint_moves(stdscr, self.get_moves())
 
             # Run the animation when g is pressed
             if char == ord('g'):
@@ -629,10 +635,7 @@ class ArrowBoard:
                 self.remaining_arrows = self.total_arrows
                 self.paint_grid()
 
-                stdscr.move(1, 0)
-                stdscr.clrtoeol()
-                stdscr.addstr(1, 0, f'arrows: {self.remaining_arrows} '
-                        f'({self.total_arrows - self.remaining_arrows})')
+                self.paint_arrow_count(stdscr)
 
             # Exit when q is pressed
             if char == ord('q'):
