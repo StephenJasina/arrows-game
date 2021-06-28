@@ -74,7 +74,7 @@ class ArrowBoard:
         in the direction of orientation.
         '''
 
-        position = list(position)
+        position = copy.deepcopy(position)
         if orientation == ArrowBoard.UP:
             position[0] -= 1
         elif orientation == ArrowBoard.LEFT:
@@ -426,15 +426,43 @@ class ArrowBoard:
         goal.
         '''
 
-        # TODO: Use Floyd's cycle detection algorithm here
+        tortoise_directions = copy.deepcopy(self.directions)
+        tortoise_position = copy.deepcopy(self.start)
+        hare_directions = copy.deepcopy(self.directions)
+        hare_position = copy.deepcopy(self.start)
 
-    def run(self, stdscr, position, delay=0.1):
+        moves = 0
+
+        while True:
+            if ArrowBoard.GOAL \
+                    in self.landmarks[hare_position[0]][hare_position[1]]:
+                return moves
+
+            if not self.advance(hare_position, hare_directions):
+                return -1
+            moves += 1
+
+            if ArrowBoard.GOAL \
+                    in self.landmarks[hare_position[0]][hare_position[1]]:
+                return moves
+
+            if not self.advance(hare_position, hare_directions):
+                return -1
+            moves += 1
+
+            self.advance(tortoise_position, tortoise_directions)
+
+            if tortoise_position == hare_position \
+                    and tortoise_directions == hare_directions:
+                return -1
+
+    def run(self, stdscr, delay=0.1):
         '''
         Repeatedly advance the board state until the position reaches the goal
         or until no move is possible. Also exits if q is pressed.
         '''
 
-        position = list(position)
+        position = copy.deepcopy(self.start)
         original_directions = copy.deepcopy(self.directions)
 
         moves = 0
@@ -490,7 +518,7 @@ class ArrowBoard:
             if ArrowBoard.GOAL in self.landmarks[position[0]][position[1]]:
                 break
 
-            previous_position = list(position)
+            previous_position = copy.deepcopy(position)
             self.erase_position(position)
 
             # If no directions are available at our position, exit
@@ -510,7 +538,7 @@ class ArrowBoard:
         # Update the move counter in case of "bad" exit
         stdscr.move(0, 0)
         stdscr.clrtoeol()
-        stdscr.addstr(0, 0, f'moves: {moves}')
+        stdscr.addstr(0, 0, f'moves: {moves if moves != -1 else "infinity"}')
 
         self.refresh(stdscr)
 
@@ -576,7 +604,11 @@ class ArrowBoard:
                         f'({self.total_arrows - self.remaining_arrows})')
 
                 # Update the number of moves
-                # self.run(stdscr, self.start, 0)
+                moves = self.get_moves()
+                stdscr.move(0, 0)
+                stdscr.clrtoeol()
+                stdscr.addstr(0, 0, f'moves: '
+                        f'{moves if moves != -1 else "infinity"}')
 
             # Run the animation when g is pressed
             if char == ord('g'):
@@ -584,7 +616,7 @@ class ArrowBoard:
                 self.erase_cursor(cursor)
                 self.refresh(stdscr)
 
-                self.run(stdscr, self.start)
+                self.run(stdscr)
 
                 # Then bring it back once we're finished
                 self.paint_cursor(cursor)
