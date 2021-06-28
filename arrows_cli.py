@@ -417,7 +417,10 @@ class ArrowBoard:
         if index is not None:
             del nonlocal_direction[index]
             self._remaining_arrows += 1
+            # This next line shouldn't need to be here unless we get in
+            # some weird state in which _remaining_arrows is negative
             self._erase_arrow(nonlocal_position, nonlocal_orientation)
+            self._paint_arrows(nonlocal_position)
 
         # Now we can safely add the arrow
         if self._remaining_arrows > 0:
