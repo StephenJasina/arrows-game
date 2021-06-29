@@ -646,10 +646,7 @@ class ArrowBoard:
             if orientation is not None:
                 self._process_orientation(cursor, orientation)
 
-                # Repaint the number of arrows remaining
                 self._paint_arrow_count(stdscr)
-
-                # Update the number of moves
                 self._paint_moves(stdscr, self._get_moves())
 
             # Run the animation when g is pressed
@@ -672,6 +669,7 @@ class ArrowBoard:
                 self._paint_landmarks()
 
                 self._paint_arrow_count(stdscr)
+                self._paint_moves(stdscr, self._get_moves())
 
             # Exit when q is pressed
             if char == ord('q'):
