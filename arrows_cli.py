@@ -674,6 +674,7 @@ class ArrowBoard:
             # Exit when q is pressed
             if char == ord('q'):
                 self._erase_cursor(cursor)
+                stdscr.refresh()
                 break
 
 
