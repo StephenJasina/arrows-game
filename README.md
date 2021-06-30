@@ -3,7 +3,9 @@
 A game inspired by [Pathery](https://www.pathery.com) and [Trainyard Express](https://play.google.com/store/apps/details?id=com.noodlecake.trainyardexpress).
 
 ## Prerequisites
-`python3` should be installed on your system. The app is currently tested on 3.9.5, but any version should work. For the best effect, use a terminal with color support.
+`python3` should be installed on your system. The app is currently tested on 3.9.5, but any version should work. `curses` is also a requirement at the moment. If you're on Windows, you may need to download [this](https://pypi.org/project/windows-curses/) with `pip install windows-curses` or similar.
+
+For the best effect, use a terminal with color support.
 
 ## Execution
 Use `python arrows-cli.py`. The keybinds are as follows:
